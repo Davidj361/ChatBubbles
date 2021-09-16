@@ -152,11 +152,11 @@ namespace ChatBubbles
                     bubble->Timer = _timer;
                 }
 
-                if (bubble->Status == SeBubbleStatus.On && cd.Stack)
+                if (bubble->Status == SeBubbleStatus.On && cd.NewMessage)
                 {
                     bubble->Status = SeBubbleStatus.Off;
                     bubble->Timer = 0;
-                    cd.Stack = false;
+                    cd.NewMessage = false;
                 }
                 break;
             }
@@ -304,10 +304,18 @@ namespace ChatBubbles
                 update++;
 
                 if (_bubbleFunctionality == 0) continue; // if it is in queue mode
+                switch (_bubbleFunctionality) {
+                    case 1: // stack
+                        cd.message.Append(nline);
+                        cd.message.Append(fmessage);
+                        break;
+                    case 2: // replace
+                        cd.message = nline;
+                        cd.message = fmessage;
+                        break;
+                }
                 update = 99999;
-                cd.message.Append(nline);
-                cd.message.Append(fmessage);
-                cd.Stack = true;
+                cd.NewMessage = true;
                 cd.dateTime = DateTime.Now;
             }
 
@@ -490,7 +498,7 @@ namespace ChatBubbles
             public int actorId;
             public DateTime dateTime;
             public string name;
-            public bool Stack { get; set; }
+            public bool NewMessage { get; set; }
         }
     }
 
