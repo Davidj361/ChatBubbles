@@ -27,7 +27,7 @@ namespace ChatBubbles
         private int _timer = 3;
         private UiColorPick _chooser;
         private int _queue;
-        private bool _stack;
+        private int _bubbleFunctionality; // 0 = queue, 1 = stack, 2 = insta-replace
 
 #if DEBUG
         private bool _config = true;
@@ -90,7 +90,7 @@ namespace ChatBubbles
             _channels = _configuration.Channels;
             _textColour = _configuration.TextColour;
             _queue = _configuration.Queue;
-            _stack = _configuration.Stack;
+            _bubbleFunctionality = _configuration.BubbleFunctionality;
 
             _pluginInterface.Framework.Gui.Chat.OnChatMessage += Chat_OnChatMessage;
             _pluginInterface.UiBuilder.OnBuildUi += BubbleConfigUi;
@@ -104,7 +104,7 @@ namespace ChatBubbles
             _updateBubbleFunc = UpdateBubbleFuncFunc;
             try
             {
-                _updateBubbleFuncHook = new Hook<UpdateBubble>(_updateBubblePtr + 0x9, _updateBubbleFunc, this);
+                _updateBubbleFuncHook = new Hook<UpdateBubble>(_updateBubblePtr + 0x9, _updateBubbleFunc);
                 _updateBubbleFuncHook.Enable();
                 if (_debug) PluginLog.Log("GOOD");
             }
@@ -115,7 +115,7 @@ namespace ChatBubbles
             _openBubbleFunc = OpenBubbleFuncFunc;
             try
             {
-                _openBubbleFuncHook = new Hook<OpenBubble>(_openBubblePtr, _openBubbleFunc, this);
+                _openBubbleFuncHook = new Hook<OpenBubble>(_openBubblePtr, _openBubbleFunc);
                 _openBubbleFuncHook.Enable();
                 if (_debug) PluginLog.Log("GOOD2");
             }
@@ -129,7 +129,7 @@ namespace ChatBubbles
             _configuration.Channels = _channels;
             _configuration.TextColour = _textColour;
             _configuration.Queue = _queue;
-            _configuration.Stack = _stack;
+            _configuration.BubbleFunctionality = _bubbleFunctionality;
             _pluginInterface.SavePluginConfig(_configuration);
         }
 
@@ -303,7 +303,7 @@ namespace ChatBubbles
                 add += _timer;
                 update++;
 
-                if (!_stack) continue;
+                if (_bubbleFunctionality == 0) continue; // if it is in queue mode
                 update = 99999;
                 cd.message.Append(nline);
                 cd.message.Append(fmessage);
@@ -362,15 +362,19 @@ namespace ChatBubbles
                 ImGui.InputInt("Bubble Timer", ref _timer);
                 ImGui.SameLine();
                 ImGui.Text("(?)"); if (ImGui.IsItemHovered()) { ImGui.SetTooltip("How long the bubble will last on screen."); }
-                ImGui.InputInt("Maximum Bubble Queue", ref _queue);
-                ImGui.SameLine();
-                ImGui.Text("(?)"); if (ImGui.IsItemHovered()) { ImGui.SetTooltip("How many bubbles can be queued to be seen per person."); }
                 ImGui.Checkbox("Debug Logging", ref _debug);
                 ImGui.SameLine();
                 ImGui.Text("(?)"); if (ImGui.IsItemHovered()) { ImGui.SetTooltip("Enable logging for debug purposes.\nOnly enable if you are going to share the `dalamud.txt` file in discord."); }
-                ImGui.Checkbox("Stack Messages", ref _stack);
+                ImGui.RadioButton("Queue", ref _bubbleFunctionality, 0);
                 ImGui.SameLine();
-                ImGui.Text("(?)"); if (ImGui.IsItemHovered()) { ImGui.SetTooltip("Instead of queueing bubbles, this option instead 'stacks' them inside the one bubble."); }
+                ImGui.RadioButton("Stack", ref _bubbleFunctionality, 1);
+                ImGui.SameLine();
+                ImGui.RadioButton("Replace", ref _bubbleFunctionality, 2);
+                ImGui.SameLine();
+                ImGui.Text("(?)"); if (ImGui.IsItemHovered()) { ImGui.SetTooltip("How do you want bubbles to function?\nQueue messages, stack messages, or insta-replace messages?"); }
+                ImGui.InputInt("Maximum Bubble Queue", ref _queue);
+                ImGui.SameLine();
+                ImGui.Text("(?)"); if (ImGui.IsItemHovered()) { ImGui.SetTooltip("How many bubbles can be queued to be seen per person."); }
                 var i = 0;
                 ImGui.Text("Enabled channels:");
                 ImGui.SameLine();
@@ -501,7 +505,6 @@ namespace ChatBubbles
         public int Version { get; set; } = 0;
         public List<XivChatType> Channels { get; set; } = new List<XivChatType>();
         public int Timer { get; set; } = 7;
-        public bool Stack { get; set; }
 
         public UiColorPick[] TextColour { get; set; } =
         {
@@ -521,5 +524,6 @@ namespace ChatBubbles
         };
 
         public int Queue { get; set; } = 3;
+        public int BubbleFunctionality { get; set; } = 0;
     }
 }
